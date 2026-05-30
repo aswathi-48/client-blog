@@ -9,8 +9,9 @@ function CreateBlog() {
   const [blog, setBlog] = useState({
     title: "",
     content: "",
-    image: "",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,30 +39,19 @@ function CreateBlog() {
         setError("Please select a valid image file");
         return;
       }
-      if (file.size > 2 * 1024 * 1024) {
-        setError("Image size should be less than 2MB");
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image size should be less than 10MB");
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBlog((prev) => ({
-          ...prev,
-          image: reader.result,
-        }));
-      };
-      reader.onerror = () => {
-        setError("Failed to read image file");
-      };
-      reader.readAsDataURL(file);
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
   const removeImage = () => {
-    setBlog((prev) => ({
-      ...prev,
-      image: "",
-    }));
+    setImageFile(null);
+    setImagePreview("");
   };
 
   const submitBlog = async (e) => {
@@ -79,12 +69,22 @@ function CreateBlog() {
     try {
       setLoading(true);
       const token = localStorage.getItem("access_token");
+
+      // Prepare Multipart FormData
+      const formData = new FormData();
+      formData.append("title", blog.title);
+      formData.append("content", blog.content);
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
       await axios.post(
         "http://localhost:3000/blog/create",
-        blog,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -118,9 +118,9 @@ function CreateBlog() {
             required
           />
 
-          {blog.image ? (
+          {imagePreview ? (
             <div className="image-preview-container">
-              <img src={blog.image} alt="Selected preview" />
+              <img src={imagePreview} alt="Selected preview" />
               <button
                 type="button"
                 className="btn remove-image-btn"
@@ -132,7 +132,7 @@ function CreateBlog() {
           ) : (
             <div className="file-input-wrapper">
               <label className="file-input-label">
-                <span>📷 Choose Cover Image</span>
+                <span>📷 Choose Cover Image (Max 10MB)</span>
                 <input
                   type="file"
                   accept="image/*"
