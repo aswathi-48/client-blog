@@ -8,12 +8,16 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchBlogs = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get("http://localhost:3000/blog");
+        const res = await axios.get(`http://localhost:3000/blog?page=${currentPage}&limit=6`);
         setBlogs(res.data.data || []);
+        setTotalPages(res.data.totalPages || 1);
       } catch (err) {
         setError("Failed to fetch latest blogs. Make sure server is running.");
       } finally {
@@ -21,7 +25,7 @@ const Home = () => {
       }
     };
     fetchBlogs();
-  }, []);
+  }, [currentPage]);
 
   const userString = localStorage.getItem("user");
   let loggedInUser = null;
@@ -32,6 +36,34 @@ const Home = () => {
       console.error(e);
     }
   }
+
+  const handleLike = async (blogId) => {
+    if (!loggedInUser) {
+      alert("Please login to like a post.");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await axios.post(
+        `http://localhost:3000/blog/${blogId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (res.data.status) {
+        setBlogs(blogs.map(blog => {
+          if (blog._id === blogId) {
+            return { ...blog, likes: res.data.likes };
+          }
+          return blog;
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to like post:", err);
+    }
+  };
 
   const filteredBlogs = blogs
     .filter(blog => {
@@ -124,7 +156,28 @@ const Home = () => {
                       : blog.content}
                   </p>
 
-                  <div className="card-footer">
+                  <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button 
+                      className="like-btn" 
+                      onClick={() => handleLike(blog._id)}
+                      title={loggedInUser ? "Like this post" : "Login to like"}
+                    >
+                      <span className={`heart-icon ${blog.likes?.includes(loggedInUser?._id) ? 'liked' : ''}`}>
+                        <svg 
+                          width="22" 
+                          height="22" 
+                          viewBox="0 0 24 24" 
+                          fill={blog.likes?.includes(loggedInUser?._id) ? "#ef4444" : "none"} 
+                          stroke={blog.likes?.includes(loggedInUser?._id) ? "#ef4444" : "currentColor"} 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                      </span>
+                      <span className="like-count" style={{ display: 'inline-block', minWidth: '15px' }}>{blog.likes?.length || 0}</span>
+                    </button>
                     <Link to={`/blog/${blog._id}`} className="read-more-btn">
                       Read Article <span className="arrow">→</span>
                     </Link>
@@ -132,6 +185,28 @@ const Home = () => {
                 </div>
               </article>
             ))}
+          </div>
+        )}
+        
+        {!loading && !error && totalPages > 1 && (
+          <div className="pagination-container">
+            <button 
+              className="pagination-btn" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              Previous
+            </button>
+            <span className="pagination-info">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button 
+              className="pagination-btn" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              Next
+            </button>
           </div>
         )}
       </div>
