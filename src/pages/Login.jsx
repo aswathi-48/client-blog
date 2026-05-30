@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { showToast } from "../components/Toast";
 import "./Login.css";
 
 const Login = () => {
@@ -64,7 +65,7 @@ const Login = () => {
         JSON.stringify(res.data.result)
       );
 
-      alert("Login Successful");
+      showToast("Login Successful", "success");
 
       navigate("/dashboard");
     } catch (err) {
@@ -118,7 +119,7 @@ const Login = () => {
 
         <div className="register-link">
           Don't have an account?
-          <Link to="/"> Register</Link>
+          <Link to="/register"> Register</Link>
         </div>
       </div>
     </div>

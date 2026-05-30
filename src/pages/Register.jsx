@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { showToast } from "../components/Toast";
 import "./Register.css";
 
 const Register = () => {
@@ -62,7 +63,7 @@ const Register = () => {
         formData
       );
 
-      alert(res.data.message);
+      showToast(res.data.message || "Registration Successful", "success");
 
       setFormData({
         name: "",
