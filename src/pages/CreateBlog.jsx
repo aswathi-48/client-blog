@@ -1,59 +1,162 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { showToast } from "../components/Toast";
 
 function CreateBlog() {
+  const navigate = useNavigate();
+  
   const [blog, setBlog] = useState({
     title: "",
     content: "",
     image: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      showToast("Please login to access this page", "error");
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
+    setError("");
     setBlog({
       ...blog,
       [e.target.name]: e.target.value,
     });
   };
 
+  const handleFileChange = (e) => {
+    setError("");
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        setError("Image size should be less than 2MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBlog((prev) => ({
+          ...prev,
+          image: reader.result,
+        }));
+      };
+      reader.onerror = () => {
+        setError("Failed to read image file");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setBlog((prev) => ({
+      ...prev,
+      image: "",
+    }));
+  };
+
   const submitBlog = async (e) => {
     e.preventDefault();
+    
+    if (!blog.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (!blog.content.trim()) {
+      setError("Content is required");
+      return;
+    }
 
-    await axios.post(
-      "http://localhost:3000/blog/create",
-      blog
-    );
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("access_token");
+      await axios.post(
+        "http://localhost:3000/blog/create",
+        blog,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    alert("Blog Created");
+      showToast("Blog Created Successfully", "success");
+      navigate("/dashboard");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to create blog"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="form-container">
-      <form onSubmit={submitBlog}>
-        <h2>Create Blog</h2>
+      <div className="form-card">
+        <h2>Create New Blog</h2>
+        <p className="subtitle">Share your ideas and stories with the world</p>
 
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          onChange={handleChange}
-        />
+        {error && <div className="error-box">{error}</div>}
 
-        <input
-          type="text"
-          name="image"
-          placeholder="Image URL"
-          onChange={handleChange}
-        />
+        <form onSubmit={submitBlog}>
+          <input
+            type="text"
+            name="title"
+            placeholder="Blog Title"
+            value={blog.title}
+            onChange={handleChange}
+            required
+          />
 
-        <textarea
-          rows="8"
-          name="content"
-          placeholder="Content"
-          onChange={handleChange}
-        />
+          {blog.image ? (
+            <div className="image-preview-container">
+              <img src={blog.image} alt="Selected preview" />
+              <button
+                type="button"
+                className="btn remove-image-btn"
+                onClick={removeImage}
+              >
+                Remove Image
+              </button>
+            </div>
+          ) : (
+            <div className="file-input-wrapper">
+              <label className="file-input-label">
+                <span>📷 Choose Cover Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
+          )}
 
-        <button>Create</button>
-      </form>
+          <textarea
+            rows="8"
+            name="content"
+            placeholder="Write your blog post content here..."
+            value={blog.content}
+            onChange={handleChange}
+            required
+          />
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Publishing..." : "Publish Blog"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
