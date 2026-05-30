@@ -1,0 +1,34 @@
+.home {
+  min-height: 80vh;
+  padding: 40px;
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+  gap: 25px;
+}
+
+.blog-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 10px #ddd;
+}
+
+.blog-card img {
+  width: 100%;
+}
+
+.blog-card h3,
+.blog-card p {
+  padding: 10px;
+}
+
+.blog-card button {
+  margin: 10px;
+  background: #c2185b;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+}
