@@ -1,8 +1,11 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
 import "./Register.css";
-import axios from 'axios'
 
 const Register = () => {
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -10,17 +13,50 @@ const Register = () => {
     phone: "",
   });
 
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
+    setError("");
+
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
+  const validateForm = () => {
+    if (formData.name.trim().length < 3) {
+      return "Name must contain at least 3 characters";
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      return "Enter a valid email";
+    }
+
+    if (formData.phone.length !== 10) {
+      return "Phone number must be 10 digits";
+    }
+
+    if (formData.password.length < 6) {
+      return "Password must be at least 6 characters";
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
+      setLoading(true);
+
       const res = await axios.post(
         "http://localhost:3000/user/register",
         formData
@@ -35,54 +71,67 @@ const Register = () => {
         phone: "",
       });
     } catch (err) {
-      console.log(err);
-      alert("Registration Failed");
+      setError(
+        err.response?.data?.message || "Registration Failed"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="register-container">
-      <form className="register-card" onSubmit={handleSubmit}>
+      <div className="register-card">
         <h2>Create Account</h2>
+        <p className="subtitle">
+          Join us and start your journey today
+        </p>
 
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
+        {error && <div className="error-box">{error}</div>}
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email Address"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={handleChange}
+          />
 
-        <input
-          type="tel"
-          name="phone"
-          placeholder="Phone Number"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-        />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            value={formData.email}
+            onChange={handleChange}
+          />
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+          <input
+            type="tel"
+            name="phone"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleChange}
+          />
 
-        <button type="submit">Register</button>
-      </form>
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+          />
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Registering..." : "Register"}
+          </button>
+        </form>
+
+        <div className="login-link">
+          Already have an account?
+          <Link to="/login"> Login</Link>
+        </div>
+      </div>
     </div>
   );
 };
