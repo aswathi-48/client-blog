@@ -42,7 +42,7 @@ const Home = () => {
       alert("Please login to like a post.");
       return;
     }
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
     if (!token) return;
 
     try {
@@ -167,16 +167,15 @@ const Home = () => {
                           width="22" 
                           height="22" 
                           viewBox="0 0 24 24" 
-                          fill={blog.likes?.includes(loggedInUser?._id) ? "#ef4444" : "none"} 
-                          stroke={blog.likes?.includes(loggedInUser?._id) ? "#ef4444" : "currentColor"} 
-                          strokeWidth="2" 
+                          fill={blog.likes?.includes(loggedInUser?._id) ? "#e84a5f" : "none"} 
+                          stroke={blog.likes?.includes(loggedInUser?._id) ? "#e84a5f" : "#65495b"} 
+                          strokeWidth="2.5" 
                           strokeLinecap="round" 
                           strokeLinejoin="round"
                         >
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                       </span>
-                      <span className="like-count" style={{ display: 'inline-block', minWidth: '15px' }}>{blog.likes?.length || 0}</span>
                     </button>
                     <Link to={`/blog/${blog._id}`} className="read-more-btn">
                       Read Article <span className="arrow">→</span>
